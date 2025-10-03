@@ -6,8 +6,8 @@ namespace ScienceStories\Mqtt\Protocol\V5;
 
 use ScienceStories\Mqtt\Client\SubscribeOptions;
 use ScienceStories\Mqtt\Protocol\Packet\Connect; // reuse DTO
-use ScienceStories\Mqtt\Protocol\Packet\Publish; // reuse DTO
-use ScienceStories\Mqtt\Protocol\Packet\PacketType; // codes are identical in v5
+use ScienceStories\Mqtt\Protocol\Packet\PacketType; // reuse DTO
+use ScienceStories\Mqtt\Protocol\Packet\Publish; // codes are identical in v5
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**

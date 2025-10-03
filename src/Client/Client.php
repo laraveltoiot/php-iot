@@ -17,11 +17,11 @@ use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Exception\Timeout;
 use ScienceStories\Mqtt\Exception\TransportError;
 use ScienceStories\Mqtt\Protocol\MqttVersion;
+use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
+use ScienceStories\Mqtt\Protocol\Packet\PacketType;
+use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\V311\Decoder as V311Decoder;
 use ScienceStories\Mqtt\Protocol\V311\Encoder as V311Encoder;
-use ScienceStories\Mqtt\Protocol\Packet\PacketType;
-use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
-use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\V5\Decoder as V5Decoder;
 use ScienceStories\Mqtt\Protocol\V5\Encoder as V5Encoder;
 use ScienceStories\Mqtt\Util\Bytes;
@@ -881,7 +881,7 @@ final class Client implements ClientInterface
      */
     private function topicMatchesAny(string $topic, array $filters): bool
     {
-        return array_any($filters, fn($filter) => $this->topicMatchesFilter($topic, (string)$filter));
+        return array_any($filters, fn ($filter) => $this->topicMatchesFilter($topic, (string)$filter));
 
     }
 
