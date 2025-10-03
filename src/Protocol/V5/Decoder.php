@@ -6,8 +6,8 @@ namespace ScienceStories\Mqtt\Protocol\V5;
 
 use ScienceStories\Mqtt\Client\InboundMessage;
 use ScienceStories\Mqtt\Exception\ProtocolError;
+use ScienceStories\Mqtt\Protocol\Packet\ConnAck; // reuse DTO
 use ScienceStories\Mqtt\Protocol\QoS;
-use ScienceStories\Mqtt\Protocol\V311\Packet\ConnAck; // reuse DTO
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**

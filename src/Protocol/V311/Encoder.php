@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Protocol\V311;
 
 use ScienceStories\Mqtt\Client\SubscribeOptions;
+use ScienceStories\Mqtt\Protocol\Packet\Connect;
+use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\QoS;
-use ScienceStories\Mqtt\Protocol\V311\Packet\Connect;
-use ScienceStories\Mqtt\Protocol\V311\Packet\Publish;
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**
@@ -16,7 +16,7 @@ use ScienceStories\Mqtt\Util\Bytes;
 final class Encoder
 {
     /**
-     * Build a CONNECT packet bytes for MQTT 3.1.1.
+     * Build a CONNECT packet byte for MQTT 3.1.1.
      */
     public function encodeConnect(Connect $pkt): string
     {

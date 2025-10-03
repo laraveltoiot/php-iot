@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Protocol\V5;
 
 use ScienceStories\Mqtt\Client\SubscribeOptions;
-use ScienceStories\Mqtt\Protocol\V311\Packet\Connect; // reuse DTO
-use ScienceStories\Mqtt\Protocol\V311\Packet\Publish; // reuse DTO
+use ScienceStories\Mqtt\Protocol\Packet\Connect; // reuse DTO
+use ScienceStories\Mqtt\Protocol\Packet\Publish; // reuse DTO
 use ScienceStories\Mqtt\Protocol\V311\PacketType; // codes are identical in v5
 use ScienceStories\Mqtt\Util\Bytes;
 
@@ -16,7 +16,7 @@ use ScienceStories\Mqtt\Util\Bytes;
 final class Encoder
 {
     /**
-     * Build a CONNECT packet bytes for MQTT 5.0.
+     * Build a CONNECT packet byte for MQTT 5.0.
      * - Empty properties (MVP)
      */
     public function encodeConnect(Connect $pkt): string

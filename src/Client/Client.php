@@ -19,9 +19,9 @@ use ScienceStories\Mqtt\Exception\TransportError;
 use ScienceStories\Mqtt\Protocol\MqttVersion;
 use ScienceStories\Mqtt\Protocol\V311\Decoder as V311Decoder;
 use ScienceStories\Mqtt\Protocol\V311\Encoder as V311Encoder;
-use ScienceStories\Mqtt\Protocol\V311\Packet\Connect as ConnectPacket;
-use ScienceStories\Mqtt\Protocol\V311\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\V311\PacketType;
+use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
+use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\V5\Decoder as V5Decoder;
 use ScienceStories\Mqtt\Protocol\V5\Encoder as V5Encoder;
 use ScienceStories\Mqtt\Util\Bytes;
@@ -113,7 +113,7 @@ final class Client implements ClientInterface
         }
         $now     = microtime(true);
         $elapsed = $now - $this->lastActivity;
-        // Guard threshold: send slightly before keepAlive expires (e.g., 90% of interval) to be safe
+        // Guard threshold: send it slightly before keepAlive expires (e.g., 90% of interval) to be safe
         $threshold = max(1.0, $keep * 0.9);
         if ($elapsed >= $threshold && ! $this->pingOutstanding && $this->transport->isOpen()) {
             $this->sendPingReq();
@@ -398,7 +398,7 @@ final class Client implements ClientInterface
                 unset($this->lastSubAck);
                 $this->logger->info('SUBACK', ['packetId' => $pid, 'codes' => $codes]);
 
-                // Record subscriptions if this is a user-initiated subscribe (avoid duplicate records during resubscribe)
+                // Record subscriptions if this is a user-initiated subscribed (avoid duplicate records during resubscribe)
                 if (! $this->isResubscribing) {
                     $this->recordSubscriptionsFromFilters($filters, $options);
                 }
@@ -452,7 +452,7 @@ final class Client implements ClientInterface
 
     public function loopOnce(?float $timeoutSec = 0.1): bool
     {
-        // Auto-reconnect if transport is closed and feature enabled
+        // Auto-reconnect if transport is closed and the feature enabled
         if (! $this->transport->isOpen() && $this->options->autoReconnect) {
             $this->logger->info('Transport not open; attempting auto-reconnect');
             $ok = $this->attemptReconnect();
@@ -468,7 +468,7 @@ final class Client implements ClientInterface
         } catch (Timeout) {
             return false; // nothing available
         } catch (TransportError) {
-            // Transport broke; attempt reconnect next iteration
+            // Transport broke; attempt to reconnect next iteration
             $this->logger->info('Transport error on readExact; will try to reconnect');
             $this->transport->close();
 
@@ -528,7 +528,7 @@ final class Client implements ClientInterface
                 }
                 // QoS2: respond with PUBREC and store pending until PUBREL
                 if ($msg->qos->value === 2 && $msg->packetId !== null) {
-                    // If duplicate PUBLISH (DUP flag may be set), resend PUBREC but do not duplicate store
+                    // If duplicate PUBLISH (a DUP flag may be set), resend PUBREC but do not duplicate store
                     $pid    = $msg->packetId;
                     $pubrec = \chr(PacketType::PUBREC->value << 4).\chr(2).pack('n', $pid);
                     $this->logger->debug('>> PUBREC', ['packetId' => $pid]);
@@ -559,7 +559,7 @@ final class Client implements ClientInterface
 
                 return true;
             case PacketType::UNSUBACK->value:
-                // store last UNSUBACK for unsubscribe waiter
+                // store last UNSUBACK for unsubscribed waiter
                 if ($this->options->version === MqttVersion::V5_0) {
                     /** @var V5Decoder $dec */
                     $dec                = $this->decoder;
@@ -635,7 +635,7 @@ final class Client implements ClientInterface
                 $this->logger->info('<< DISCONNECT', ['reasonCode' => $reason]);
                 $this->transport->close();
                 if ($this->options->autoReconnect) {
-                    // Keep running; loopOnce will try to reconnect on next iteration
+                    // Keep running; loopOnce will try to reconnect on the next iteration
                     $this->shouldStop = false;
                     $this->logger->info('Will attempt auto-reconnect');
                 } else {
@@ -881,13 +881,8 @@ final class Client implements ClientInterface
      */
     private function topicMatchesAny(string $topic, array $filters): bool
     {
-        foreach ($filters as $filter) {
-            if ($this->topicMatchesFilter($topic, (string) $filter)) {
-                return true;
-            }
-        }
+        return array_any($filters, fn($filter) => $this->topicMatchesFilter($topic, (string)$filter));
 
-        return false;
     }
 
     private function topicMatchesFilter(string $topic, string $filter): bool

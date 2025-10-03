@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ScienceStories\Mqtt\Protocol\V311\Packet;
+namespace ScienceStories\Mqtt\Protocol\Packet;
 
 /**
  * CONNACK packet model for MQTT 3.1.1 and 5.0.

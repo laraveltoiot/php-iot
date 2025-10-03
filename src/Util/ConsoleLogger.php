@@ -15,7 +15,7 @@ final class ConsoleLogger extends AbstractLogger
 {
     public function log($level, string|\Stringable $message, array $context = []): void
     {
-        $ts  = (new DateTimeImmutable())->format('H:i:s.u');
+        $ts  = new DateTimeImmutable()->format('H:i:s.u');
         $msg = \is_string($message) ? $message : (string) $message;
 
         // Normalize level to string

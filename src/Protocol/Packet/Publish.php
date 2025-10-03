@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ScienceStories\Mqtt\Protocol\V311\Packet;
+namespace ScienceStories\Mqtt\Protocol\Packet;
 
 use ScienceStories\Mqtt\Protocol\QoS;
 
@@ -14,7 +14,7 @@ use ScienceStories\Mqtt\Protocol\QoS;
 final class Publish
 {
     /**
-     * @param  array<string, mixed>|null  $properties  MQTT 5 publish properties map. Supported keys:
+     * @param  array<string, mixed>|null  $properties  MQTT 5 publish property map. Supported keys:
      *                                                 - payload_format_indicator: 0|1 or bool
      *                                                 - message_expiry_interval: int (seconds)
      *                                                 - topic_alias: int (1..65535)
