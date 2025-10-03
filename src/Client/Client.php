@@ -19,7 +19,7 @@ use ScienceStories\Mqtt\Exception\TransportError;
 use ScienceStories\Mqtt\Protocol\MqttVersion;
 use ScienceStories\Mqtt\Protocol\V311\Decoder as V311Decoder;
 use ScienceStories\Mqtt\Protocol\V311\Encoder as V311Encoder;
-use ScienceStories\Mqtt\Protocol\V311\PacketType;
+use ScienceStories\Mqtt\Protocol\Packet\PacketType;
 use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
 use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\V5\Decoder as V5Decoder;

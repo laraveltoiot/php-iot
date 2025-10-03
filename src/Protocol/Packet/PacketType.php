@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ScienceStories\Mqtt\Protocol\V311;
+namespace ScienceStories\Mqtt\Protocol\Packet;
 
 /**
  * MQTT 3.1.1 control packet types (1..14).

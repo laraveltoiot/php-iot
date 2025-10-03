@@ -6,6 +6,7 @@ namespace ScienceStories\Mqtt\Protocol\V311;
 
 use ScienceStories\Mqtt\Client\SubscribeOptions;
 use ScienceStories\Mqtt\Protocol\Packet\Connect;
+use ScienceStories\Mqtt\Protocol\Packet\PacketType;
 use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
