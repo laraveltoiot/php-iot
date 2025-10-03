@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ScienceStories\Mqtt\Events;
+
+/**
+ * PSR-14 event dispatched when a raw MQTT packet is sent.
+ * DTO-only, immutable.
+ */
+final class PacketSent
+{
+    public function __construct(
+        public string $bytes,
+        public int $packetType,
+    ) {
+    }
+}

@@ -1,0 +1,13 @@
+parameters:
+  phpVersion: 80400
+  level: max
+  paths:
+    - src
+  bootstrapFiles:
+    - vendor/autoload.php
+  treatPhpDocTypesAsCertain: true
+  reportUnmatchedIgnoredErrors: true
+  checkMissingTypehints: true
+  inferPrivatePropertyTypeFromConstructor: true
+  parallel:
+    maximumNumberOfProcesses: 8

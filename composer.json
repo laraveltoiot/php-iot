@@ -1,0 +1,55 @@
+{
+  "name": "science-stories/php-iot",
+  "description": "Modern, production-grade MQTT 3.1.1 & 5 client for PHP 8.4+",
+  "type": "library",
+  "license": "MIT",
+  "keywords": ["mqtt", "mqtt5", "mqtt3", "iot", "client", "php8.4", "networking"],
+  "authors": [
+    {
+      "name": "Bogdan Gewald",
+      "email": "gewaldb@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.4",
+    "psr/log": "^3.0.2",
+    "psr/event-dispatcher": "^1.0"
+  },
+  "require-dev": {
+    "pestphp/pest": "^4.1",
+    "pestphp/pest-plugin-type-coverage": "^4.0",
+    "phpstan/phpstan": "^2.1.29",
+    "laravel/pint": "^1.25.1",
+    "rector/rector": "^2.1.7",
+    "symfony/var-dumper": "^v7.3.3",
+    "vlucas/phpdotenv": "^v5.6.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "ScienceStories\\Mqtt\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ScienceStories\\Mqtt\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "scripts": {
+    "test": "pest",
+    "test:coverage": "pest --coverage",
+    "type-coverage": "pest --type-coverage",
+    "stan": "phpstan analyse --memory-limit=1G",
+    "pint": "pint",
+    "lint": "@pint --test && @stan",
+    "rector": "rector process --clear-cache",
+    "bench": "php benchmarks/publish-throughput.php"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
