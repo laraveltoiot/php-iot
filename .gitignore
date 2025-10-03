@@ -16,3 +16,6 @@
 
 examples/config.php
 .junie/
+
+# Personal release management file
+RELEASE_CHECKLIST.md
