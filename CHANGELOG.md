@@ -1,6 +1,24 @@
 # Changelog
 
 
+## [1.0.5] - 2025-10-04
+
+### Added
+- Subscribe packet model (Subscribe.php) with comprehensive documentation explaining MQTT 3.1.1 vs. 5.0 differences
+- Detailed usage examples in Subscribe.php showing topic filters, wildcards, QoS levels, and MQTT 5.0 subscription options
+- New focused subscription examples (subscribe_v3.php, subscribe_v5.php) demonstrating subscription features
+- subscribe_v3.php: MQTT 3.1.1 subscription with configurable topic variable, multiple filters, wildcards, and message listening
+- subscribe_v5.php: MQTT 5.0 subscription with three advanced examples (No Local, Retain Handling, all options with user properties)
+- Comprehensive inline documentation for Subscribe packet covering topic filters, wildcards, and subscription options
+- 6 detailed usage examples in Subscribe.php demonstrating various subscription patterns
+
+### Enhanced
+- V311\Encoder::encodeSubscribe() with a comprehensive docblock explaining packet structure and inline comments
+- V5\Encoder::encodeSubscribe() with detailed packet structure and subscription options byte layout documentation
+- Subscribe packet model explaining No Local, Retain As Published, Retain Handling options for MQTT 5.0
+- Both subscription examples with configurable topic variables prominently marked for easy customization
+- Message handlers displaying full message details including QoS, retain flag, and MQTT 5.0 properties
+
 ## [1.0.4] - 2025-10-04
 
 ### Added

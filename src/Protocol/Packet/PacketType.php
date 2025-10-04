@@ -29,7 +29,7 @@ enum PacketType: int
 {
     case CONNECT     = 1;  // Client -> Broker: Connection request
     case CONNACK     = 2;  // Broker -> Client: Connection acknowledgment
-    case PUBLISH     = 3;  // Bidirectional: Publish message
+    case PUBLISH     = 3;  // Bidirectional: Publish a message
     case PUBACK      = 4;  // Bidirectional: QoS 1 acknowledgment
     case PUBREC      = 5;  // Bidirectional: QoS 2 delivery part 1
     case PUBREL      = 6;  // Bidirectional: QoS 2 delivery part 2

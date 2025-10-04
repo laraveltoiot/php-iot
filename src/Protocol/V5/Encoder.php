@@ -152,54 +152,97 @@ final class Encoder implements EncoderInterface
     }
 
     /**
-     * @param  non-empty-list<array{filter:string,qos:int}>  $filters
+     * Encode a SUBSCRIBE packet for MQTT 5.0.
+     *
+     * Packet structure:
+     * - Fixed Header: Type (8), reserved flags (0x02)
+     * - Variable Header: Packet Identifier (2 bytes) + Properties
+     * - Payload: List of topic filters with subscription options
+     *   * Each entry: UTF-8 topic filter + 1 byte subscription options
+     *
+     * MQTT 5.0 extends subscriptions with:
+     * - Properties field (user_properties supported)
+     * - Subscription options byte combining QoS and three flags:
+     *   * Bits 0-1: QoS level (0, 1, or 2)
+     *   * Bit 2: No Local flag (don't send back own publications)
+     *   * Bit 3: Retain As Published flag (forward retain flag as-is)
+     *   * Bits 4-5: Retain Handling (0=send, 1=send if new, 2=don't send)
+     *   * Bits 6-7: Reserved (must be 0)
+     *
+     * @param  non-empty-list<array{filter:string,qos:int}>  $filters  Topic filters with QoS levels
+     * @param  int  $packetId  Packet identifier (1-65535) for tracking SUBACK response
+     * @param  SubscribeOptions|null  $options  Subscription options (noLocal, retainAsPublished, retainHandling, properties)
+     * @return string Binary-encoded SUBSCRIBE packet
      */
     public function encodeSubscribe(array $filters, int $packetId, ?SubscribeOptions $options = null): string
     {
+        // Variable header: Packet Identifier (2 bytes, big-endian)
         $vh = pack('n', $packetId);
-        // Properties for SUBSCRIBE (v5). Support: user_properties only (others can be added later)
+
+        // Properties for SUBSCRIBE (v5). Support: user_properties (0x26)
+        // Other properties like subscription_identifier (0x0B) can be added later
         $props = '';
         if ($options !== null && \is_array($options->properties) && \array_key_exists('user_properties', $options->properties)) {
             $up = $options->properties['user_properties'];
             if (\is_array($up)) {
                 foreach ($this->normalizeUserProperties($up) as [$k, $v]) {
+                    // User Property (0x26): key-value string pair
                     $props .= \chr(0x26).Bytes::encodeString($k).Bytes::encodeString($v);
                 }
             }
         }
+        // Append properties with varint length prefix
         $vh .= Bytes::encodeVarInt(\strlen($props)).$props;
 
+        // Payload: Topic filters with subscription options
         $payload = '';
         foreach ($filters as $f) {
             $filter = (string) $f['filter'];
             $qos    = (int) $f['qos'];
+
+            // Skip empty filters
             if ($filter === '') {
                 continue;
             }
+
+            // Clamp QoS to valid range (0-2)
             if ($qos < 0) {
                 $qos = 0;
             }
             if ($qos > 2) {
                 $qos = 2;
             }
+
+            // Build subscription options byte (MQTT 5.0 feature)
             $opts = 0;
-            // QoS bits 0..1
+
+            // Bits 0-1: QoS level
             $opts |= ($qos & 0x03);
+
+            // Apply MQTT 5.0 subscription options if provided
             if ($options) {
+                // Bit 2: No Local flag (don't receive own publications)
                 if ($options->noLocal) {
-                    $opts |= 0x04; // bit2
+                    $opts |= 0x04;
                 }
+                // Bit 3: Retain As Published flag (forward retain flag)
                 if ($options->retainAsPublished) {
-                    $opts |= 0x08; // bit3
+                    $opts |= 0x08;
                 }
-                $rh = $options->retainHandling & 0x03; // bits4-5
+                // Bits 4-5: Retain Handling (0=send, 1=send if new, 2=don't send)
+                $rh = $options->retainHandling & 0x03;
                 $opts |= ($rh << 4);
             }
+
+            // Encode: UTF-8 string (2-byte length + bytes) + 1-byte subscription options
             $payload .= Bytes::encodeString($filter).\chr($opts);
         }
 
+        // Calculate remaining length
         $remaining = \strlen($vh) + \strlen($payload);
-        $fixed     = \chr((PacketType::SUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
+
+        // Fixed header: type SUBSCRIBE (8) with reserved flags 0b0010 (0x02)
+        $fixed = \chr((PacketType::SUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
 
         return $fixed.$vh.$payload;
     }

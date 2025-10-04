@@ -127,30 +127,56 @@ final class Encoder implements EncoderInterface
     }
 
     /**
-     * @param  non-empty-list<array{filter:string,qos:int}>  $filters
+     * Encode a SUBSCRIBE packet for MQTT 3.1.1.
+     *
+     * Packet structure:
+     * - Fixed Header: Type (8), reserved flags (0x02)
+     * - Variable Header: Packet Identifier (2 bytes)
+     * - Payload: List of topic filters with requested QoS
+     *   * Each entry: UTF-8 topic filter + 1 byte QoS (0, 1, or 2)
+     *
+     * MQTT 3.1.1 only supports basic subscription with topic filter and QoS level.
+     * No subscription options like No Local, Retain As Published, or Retain Handling.
+     * The $options parameter is ignored in v3.1.1 (provided for interface compatibility).
+     *
+     * @param  non-empty-list<array{filter:string,qos:int}>  $filters  Topic filters with QoS levels
+     * @param  int  $packetId  Packet identifier (1-65535) for tracking SUBACK response
+     * @param  SubscribeOptions|null  $options  Ignored in MQTT 3.1.1 (MQTT 5.0 only)
+     * @return string Binary-encoded SUBSCRIBE packet
      */
     public function encodeSubscribe(array $filters, int $packetId, ?SubscribeOptions $options = null): string
     {
-        // Variable header: Packet Identifier
+        // Variable header: Packet Identifier (2 bytes, big-endian)
         $vh = pack('n', $packetId);
-        // Payload: Topic Filter + Requested QoS (only QoS byte in v3)
+
+        // Payload: Topic Filter + Requested QoS (only QoS byte in v3.1.1, no subscription options)
         $payload = '';
         foreach ($filters as $f) {
             $filter = (string) $f['filter'];
             $qos    = (int) $f['qos'];
+
+            // Skip empty filters
             if ($filter === '') {
                 continue;
             }
+
+            // Clamp QoS to valid range (0-2)
             if ($qos < 0) {
                 $qos = 0;
             }
             if ($qos > 2) {
                 $qos = 2;
             }
+
+            // Encode: UTF-8 string (2-byte length + bytes) + 1-byte QoS
             $payload .= Bytes::encodeString($filter).\chr($qos);
         }
+
+        // Calculate remaining length
         $remaining = \strlen($vh) + \strlen($payload);
-        $fixed     = \chr((PacketType::SUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
+
+        // Fixed header: type SUBSCRIBE (8) with reserved flags 0b0010 (0x02)
+        $fixed = \chr((PacketType::SUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
 
         return $fixed.$vh.$payload;
     }
