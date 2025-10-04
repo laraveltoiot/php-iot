@@ -1,6 +1,37 @@
 # Changelog
 
 
+## [1.0.9] - 2025-10-04
+
+### Added
+- Disconnect packet model (Disconnect.php) with comprehensive documentation for MQTT 3.1.1 and 5.0 disconnect handling
+- MQTT 5.0 disconnect reason codes (27 codes: 0x00=Normal, 0x04=Disconnect with Will, 0x80+=errors)
+- Helper methods in Disconnect: isNormal(), isError(), getReasonDescription()
+- MQTT 5.0 property accessors in Disconnect: getReasonString(), getUserProperties(), getServerReference(), getSessionExpiryInterval()
+- PingReq packet model (PingReq.php) with comprehensive keepalive mechanism documentation
+- PingResp packet model (PingResp.php) with comprehensive broker response documentation
+- New PING example (ping_example.php) demonstrating manual ping, latency testing, and auto-ping behavior for both MQTT versions
+- New DISCONNECT example (disconnect_example.php) demonstrating graceful disconnects for both MQTT versions
+- Comprehensive usage examples in Disconnect.php showing various disconnect scenarios (6 examples)
+- Detailed explanation of keepalive mechanism in PingReq.php with configuration examples
+- Timeout handling and broken connection detection in PingResp.php
+- MQTT 5.0 disconnect use cases documentation (server shutdown, session takeover, keepalive timeout, quota exceeded, server moved)
+
+### Enhanced
+- ping_example.php with three examples for MQTT 3.1.1: manual ping, multiple pings with statistics, auto-ping observation (25-second demonstration)
+- ping_example.php with MQTT 5.0 examples: manual ping, connection health check
+- disconnect_example.php with MQTT 3.1.1 simple disconnect and comprehensive packet structure explanation
+- disconnect_example.php with MQTT 5.0 examples: normal disconnect, disconnect with Will Message, connection duration tracking
+- Comprehensive summary sections explaining MQTT 5.0 reason codes, properties, and use cases
+- Key differences documentation between MQTT 3.1.1 and 5.0 for both ping and disconnect functionality
+
+### Notes
+- PINGREQ/PINGRESP packets are identical in MQTT 3.1.1 and 5.0 (2 bytes, no properties)
+- DISCONNECT in MQTT 3.1.1 is simple (2 bytes), while MQTT 5.0 adds reason codes and properties
+- Auto-ping triggers at ~90% of keepalive interval to prevent connection timeouts
+- Keepalive interval configurable via Options::withKeepAlive() method
+- All examples tested with live broker demonstrating real-world behavior
+
 ## [1.0.8] - 2025-10-04
 
 ### Added
