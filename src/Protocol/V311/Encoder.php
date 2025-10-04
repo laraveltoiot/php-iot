@@ -182,13 +182,27 @@ final class Encoder implements EncoderInterface
     }
 
     /**
-     * @param  non-empty-list<string>  $filters
+     * Encode an UNSUBSCRIBE packet for MQTT 3.1.1.
+     *
+     * Packet structure:
+     * - Fixed Header: Type (10), reserved flags (0x02)
+     * - Variable Header: Packet Identifier (2 bytes)
+     * - Payload: List of topic filters to unsubscribe from
+     *   * Each entry: UTF-8 topic filter string
+     *
+     * MQTT 3.1.1 only supports basic unsubscription with topic filter list.
+     * No properties or options (properties are MQTT 5.0 only).
+     *
+     * @param  non-empty-list<string>  $filters  List of topic filters to unsubscribe from
+     * @param  int  $packetId  Packet identifier (1-65535) for tracking UNSUBACK response
+     * @return string Binary-encoded UNSUBSCRIBE packet
      */
     public function encodeUnsubscribe(array $filters, int $packetId): string
     {
-        // Variable header: Packet Identifier
+        // Variable header: Packet Identifier (2 bytes, big-endian)
         $vh = pack('n', $packetId);
-        // Payload: list of topic filters
+
+        // Payload: List of topic filters (UTF-8 strings)
         $payload = '';
         foreach ($filters as $filter) {
             $f = (string) $filter;
@@ -197,8 +211,11 @@ final class Encoder implements EncoderInterface
             }
             $payload .= Bytes::encodeString($f);
         }
+
+        // Calculate remaining length
         $remaining = \strlen($vh) + \strlen($payload);
-        // Fixed header: type UNSUBSCRIBE (10) with reserved flags 0b0010
+
+        // Fixed header: type UNSUBSCRIBE (10) with reserved flags 0b0010 (0x02)
         $fixed = \chr((PacketType::UNSUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
 
         return $fixed.$vh.$payload;

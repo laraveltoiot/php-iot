@@ -1,6 +1,30 @@
 # Changelog
 
 
+## [1.0.7] - 2025-10-04
+
+### Added
+- UnsubAck packet model (UnsubAck.php) with comprehensive documentation for MQTT 3.1.1 and 5.0
+- MQTT 5.0 reason code descriptions for UNSUBACK (0x00=Success, 0x11=No subscription existed, 0x80+=errors)
+- Helper methods in UnsubAck: isSuccess(), hasFailures(), getReasonDescription(), getAllReasonDescriptions()
+- Utility method in UnsubAck: getFailedIndices()
+- MQTT 5.0 property accessors in UnsubAck: getReasonString(), getUserProperties()
+- UnsubscribeResult class for structured unsubscribe operation results
+- New UNSUBSCRIBE example (unsubscribe_example.php) is demonstrating subscribe/unsubscribe workflow for both MQTT versions
+- Comprehensive documentation for UNSUBSCRIBE packet encoding in both V311\Encoder and V5\Encoder
+
+### Enhanced
+- V311\Decoder::decodeUnsubAck() to return UnsubAck object instead of a raw array
+- V5\Decoder::decodeUnsubAck() to return UnsubAck object with MQTT 5.0 properties parsing
+- DecoderInterface::decodeUnsubAck() return type from array to UnsubAck
+- Client.php unsubscribe workflow to handle UnsubAck objects throughout
+- V311\Encoder::encodeUnsubscribe() with a comprehensive docblock explaining packet structure
+- V5\Encoder::encodeUnsubscribe() with detailed packet structure and properties field documentation
+
+### Fixed
+- Type safety in UNSUBACK handling (UnsubAck object instead of raw arrays)
+- Simplified UNSUBACK handling in Client::loopOnce() by removing version-specific logic
+
 ## [1.0.6] - 2025-10-04
 
 ### Added

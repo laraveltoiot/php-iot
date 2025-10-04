@@ -9,6 +9,7 @@ use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck; // reuse DTO
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
+use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
@@ -322,11 +323,19 @@ final class Decoder implements DecoderInterface
     }
 
     /**
-     * Decode UNSUBACK: packetId + properties + reason codes (ignored but parsed)
+     * Decode UNSUBACK: packetId + properties + reason codes.
      *
-     * @return array{packetId:int, codes:list<int>}
+     * MQTT 5.0 UNSUBACK structure:
+     * - Packet Identifier (2 bytes)
+     * - Properties (varint length + properties)
+     *   * reason_string (0x1F): string
+     *   * user_properties (0x26): key-value pairs
+     * - Reason codes (1 byte per unsubscribed topic filter)
+     *   * 0x00: Success
+     *   * 0x11: No subscription existed
+     *   * 0x80+: Various failure codes
      */
-    public function decodeUnsubAck(string $packetBody): array
+    public function decodeUnsubAck(string $packetBody): UnsubAck
     {
         if (\strlen($packetBody) < 4) {
             throw new ProtocolError('UNSUBACK too short');
@@ -335,21 +344,66 @@ final class Decoder implements DecoderInterface
         if ($arr === false || ! isset($arr[1]) || ! \is_int($arr[1])) {
             throw new ProtocolError('UNSUBACK malformed packet id');
         }
-        $pid      = (int) $arr[1];
-        $offset   = 2;
+        $pid    = (int) $arr[1];
+        $offset = 2;
+
+        // Properties
         $rest     = substr($packetBody, $offset);
         $consumed = 0;
         $propLen  = Bytes::decodeVarInt($rest, $consumed);
-        $offset += $consumed + $propLen;
-        if ($offset > \strlen($packetBody)) {
+        $offset += $consumed;
+        if ($offset + $propLen > \strlen($packetBody)) {
             throw new ProtocolError('UNSUBACK properties truncated');
         }
+        $propsRaw = substr($packetBody, $offset, $propLen);
+        $offset += $propLen;
+        $propsMap = $propLen > 0 ? $this->parseUnsubAckProperties($propsRaw) : null;
+
+        // Reason codes
         $codes = [];
         for ($i = $offset, $n = \strlen($packetBody); $i < $n; $i++) {
             $codes[] = \ord($packetBody[$i]);
         }
 
-        return ['packetId' => $pid, 'codes' => $codes];
+        return new UnsubAck($pid, $codes, $propsMap);
+    }
+
+    /**
+     * Parse MQTT 5.0 UNSUBACK properties.
+     * Recognized keys:
+     *  - reason_string (0x1F): string
+     *  - user_properties (0x26): array<string,string>
+     *
+     * @return array<string, mixed>
+     */
+    private function parseUnsubAckProperties(string $props): array
+    {
+        $out = [];
+        $i   = 0;
+        $n   = \strlen($props);
+        while ($i < $n) {
+            $id = \ord($props[$i++]);
+            switch ($id) {
+                case 0x1F: // Reason String (string)
+                    $off                  = $i;
+                    $out['reason_string'] = Bytes::decodeString($props, $off);
+                    $i                    = $off;
+                    break;
+                case 0x26: // User Property (key,value)
+                    $off                        = $i;
+                    $k                          = Bytes::decodeString($props, $off);
+                    $v                          = Bytes::decodeString($props, $off);
+                    $i                          = $off;
+                    $out['user_properties'][$k] = $v;
+                    break;
+                default:
+                    // Unknown property: stop parsing for safety
+                    $i = $n;
+                    break;
+            }
+        }
+
+        return $out;
     }
 
     /**

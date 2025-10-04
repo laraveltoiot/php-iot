@@ -9,6 +9,7 @@ use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
+use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
@@ -107,11 +108,14 @@ final class Decoder implements DecoderInterface
     }
 
     /**
-     * Decode UNSUBACK body: packetId only in v3.1.1
+     * Decode UNSUBACK body: packetId only in v3.1.1.
      *
-     * @return array{packetId:int}
+     * MQTT 3.1.1 UNSUBACK structure:
+     * - Packet Identifier (2 bytes)
+     * - No reason codes (acknowledgment is implicit success)
+     * - No properties
      */
-    public function decodeUnsubAck(string $packetBody): array
+    public function decodeUnsubAck(string $packetBody): UnsubAck
     {
         if (\strlen($packetBody) < 2) {
             throw new ProtocolError('UNSUBACK too short');
@@ -121,6 +125,8 @@ final class Decoder implements DecoderInterface
             throw new ProtocolError('UNSUBACK malformed packet id');
         }
 
-        return ['packetId' => (int) $arr[1]];
+        $pid = (int) $arr[1];
+
+        return new UnsubAck($pid);
     }
 }

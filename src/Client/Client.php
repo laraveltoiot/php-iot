@@ -23,6 +23,7 @@ use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
 use ScienceStories\Mqtt\Protocol\Packet\PacketType;
 use ScienceStories\Mqtt\Protocol\Packet\Publish;
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
+use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 use ScienceStories\Mqtt\Protocol\V311\Decoder as V311Decoder;
 use ScienceStories\Mqtt\Protocol\V311\Encoder as V311Encoder;
 use ScienceStories\Mqtt\Protocol\V5\Decoder as V5Decoder;
@@ -59,8 +60,7 @@ final class Client implements ClientInterface
 
     private ?SubAck $lastSubAck = null;
 
-    /** @var array{packetId:int,codes:list<int>}|null */
-    private ?array $lastUnsubAck = null;
+    private ?UnsubAck $lastUnsubAck = null;
 
     private float $lastActivity = 0.0;
 
@@ -440,9 +440,10 @@ final class Client implements ClientInterface
             if (! $ok) {
                 continue;
             }
-            if (isset($this->lastUnsubAck) && $this->lastUnsubAck['packetId'] === $pid) {
-                $codes = $this->lastUnsubAck['codes'];
+            if (isset($this->lastUnsubAck) && $this->lastUnsubAck->packetId === $pid) {
+                $unsuback = $this->lastUnsubAck;
                 unset($this->lastUnsubAck);
+                $codes = $unsuback->reasonCodes ?? [];
                 $this->logger->info('UNSUBACK', ['packetId' => $pid, 'codes' => $codes]);
 
                 // Remove from stored subscriptions
@@ -562,17 +563,9 @@ final class Client implements ClientInterface
 
                 return true;
             case PacketType::UNSUBACK->value:
-                // store last UNSUBACK for unsubscribed waiter
-                if ($this->options->version === MqttVersion::V5_0) {
-                    /** @var V5Decoder $dec */
-                    $dec                = $this->decoder;
-                    $this->lastUnsubAck = $dec->decodeUnsubAck($body);
-                } else {
-                    /** @var V311Decoder $dec */
-                    $dec                = $this->decoder;
-                    $arr                = $dec->decodeUnsubAck($body);
-                    $this->lastUnsubAck = ['packetId' => $arr['packetId'], 'codes' => []];
-                }
+                // store last UNSUBACK for unsubscribe waiter
+                $dec                = $this->decoder;
+                $this->lastUnsubAck = $dec->decodeUnsubAck($body);
 
                 return true;
             case PacketType::PUBACK->value:

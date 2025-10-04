@@ -248,13 +248,33 @@ final class Encoder implements EncoderInterface
     }
 
     /**
-     * @param  non-empty-list<string>  $filters
+     * Encode an UNSUBSCRIBE packet for MQTT 5.0.
+     *
+     * Packet structure:
+     * - Fixed Header: Type (10), reserved flags (0x02)
+     * - Variable Header: Packet Identifier (2 bytes) + Properties
+     * - Payload: List of topic filters to unsubscribe from
+     *   * Each entry: UTF-8 topic filter string
+     *
+     * MQTT 5.0 includes a properties field in the variable header for enhanced features.
+     * Currently, no properties are encoded (empty properties with length 0).
+     * Future enhancements can add user_properties for custom metadata.
+     *
+     * @param  non-empty-list<string>  $filters  List of topic filters to unsubscribe from
+     * @param  int  $packetId  Packet identifier (1-65535) for tracking UNSUBACK response
+     * @return string Binary-encoded UNSUBSCRIBE packet
      */
     public function encodeUnsubscribe(array $filters, int $packetId): string
     {
-        // Variable header: Packet Identifier + Properties (none in MVP)
-        $vh = pack('n', $packetId).Bytes::encodeVarInt(0);
-        // Payload: list of topic filters
+        // Variable header: Packet Identifier (2 bytes, big-endian) + Properties
+        $vh = pack('n', $packetId);
+
+        // Properties for UNSUBSCRIBE (v5). Currently empty (MVP).
+        // Future: user_properties (0x26) can be added here
+        $props = '';
+        $vh .= Bytes::encodeVarInt(\strlen($props)).$props;
+
+        // Payload: List of topic filters (UTF-8 strings)
         $payload = '';
         foreach ($filters as $filter) {
             $f = (string) $filter;
@@ -263,8 +283,12 @@ final class Encoder implements EncoderInterface
             }
             $payload .= Bytes::encodeString($f);
         }
+
+        // Calculate remaining length
         $remaining = \strlen($vh) + \strlen($payload);
-        $fixed     = \chr((PacketType::UNSUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
+
+        // Fixed header: type UNSUBSCRIBE (10) with reserved flags 0b0010 (0x02)
+        $fixed = \chr((PacketType::UNSUBSCRIBE->value << 4) | 0x02).Bytes::encodeVarInt($remaining);
 
         return $fixed.$vh.$payload;
     }

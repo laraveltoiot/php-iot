@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Contract;
 
 use ScienceStories\Mqtt\Client\InboundMessage;
+use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
+use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 
 /**
  * Contract for MQTT packet decoders.
@@ -25,7 +27,7 @@ interface DecoderInterface
      *
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
      * @return ConnAck Decoded CONNACK packet data
-     * @throws \ScienceStories\Mqtt\Exception\ProtocolError If packet is malformed
+     * @throws ProtocolError If a packet is malformed
      */
     public function decodeConnAck(string $packetBody): ConnAck;
 
@@ -37,7 +39,7 @@ interface DecoderInterface
      *
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
      * @return SubAck Decoded SUBACK packet with packet ID, return codes, and properties (MQTT 5.0)
-     * @throws \ScienceStories\Mqtt\Exception\ProtocolError If packet is malformed
+     * @throws ProtocolError If packet is malformed
      */
     public function decodeSubAck(string $packetBody): SubAck;
 
@@ -50,7 +52,7 @@ interface DecoderInterface
      * @param  int  $flags  Fixed header flags (bits 0-3 of first byte)
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
      * @return InboundMessage Decoded PUBLISH message
-     * @throws \ScienceStories\Mqtt\Exception\ProtocolError If packet is malformed
+     * @throws ProtocolError If packet is malformed
      */
     public function decodePublish(int $flags, string $packetBody): InboundMessage;
 
@@ -58,12 +60,12 @@ interface DecoderInterface
      * Decode an UNSUBACK packet from binary format.
      *
      * The UNSUBACK packet is sent by the broker in response to an UNSUBSCRIBE packet.
-     * For MQTT 3.1.1, it contains only the packet identifier.
-     * For MQTT 5, it also includes reason codes for each unsubscription.
+     * For MQTT 3.1.1, it contains only the packet identifier (implicit success).
+     * For MQTT 5.0, it also includes reason codes for each unsubscription and optional properties.
      *
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
-     * @return array{packetId:int} Packet ID (and optionally reason codes for MQTT 5)
-     * @throws \ScienceStories\Mqtt\Exception\ProtocolError If packet is malformed
+     * @return UnsubAck Decoded UNSUBACK packet with packet ID, reason codes (MQTT 5.0), and properties (MQTT 5.0)
+     * @throws ProtocolError If packet is malformed
      */
-    public function decodeUnsubAck(string $packetBody): array;
+    public function decodeUnsubAck(string $packetBody): UnsubAck;
 }
