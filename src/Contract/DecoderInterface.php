@@ -6,6 +6,7 @@ namespace ScienceStories\Mqtt\Contract;
 
 use ScienceStories\Mqtt\Client\InboundMessage;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
+use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 
 /**
  * Contract for MQTT packet decoders.
@@ -35,10 +36,10 @@ interface DecoderInterface
      * It contains the packet identifier and return codes for each subscription.
      *
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
-     * @return array{packetId:int, codes:list<int>} Packet ID and list of subscription result codes
+     * @return SubAck Decoded SUBACK packet with packet ID, return codes, and properties (MQTT 5.0)
      * @throws \ScienceStories\Mqtt\Exception\ProtocolError If packet is malformed
      */
-    public function decodeSubAck(string $packetBody): array;
+    public function decodeSubAck(string $packetBody): SubAck;
 
     /**
      * Decode an inbound PUBLISH packet from binary format.

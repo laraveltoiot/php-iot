@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [1.0.6] - 2025-10-04
+
+### Added
+- SubAck packet model (SubAck.php) with comprehensive documentation for MQTT 3.1.1 and 5.0
+- MQTT 3.1.1 return code descriptions (0x00-0x02 = granted QoS, 0x80 = failure)
+- MQTT 5.0 reason code descriptions (0x00-0x02 = granted QoS, 0x80+ = various failures)
+- Helper methods in SubAck: isSuccess(), hasFailures(), getReasonDescription(), getAllReasonDescriptions()
+- Utility methods in SubAck: getGrantedQoS(), getFailedIndices()
+- MQTT 5.0 property accessors in SubAck: getReasonString(), getUserProperties()
+- New SUBACK inspection example (suback_example.php) demonstrating detailed broker response inspection
+- SubAck object in SubscribeResult for detailed inspection of subscription results
+
+### Enhanced
+- V311\Decoder::decodeSubAck() to return SubAck object instead of raw array
+- V5\Decoder::decodeSubAck() to return SubAck object with MQTT 5.0 properties parsing
+- DecoderInterface::decodeSubAck() return type from array to SubAck
+- SubscribeResult with SubAck object property and comprehensive documentation
+- Client.php to handle SubAck objects throughout subscription workflow
+
+### Fixed
+- Type safety in SUBACK handling (SubAck object instead of raw arrays)
+
 ## [1.0.5] - 2025-10-04
 
 ### Added

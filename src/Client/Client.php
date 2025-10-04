@@ -22,6 +22,7 @@ use ScienceStories\Mqtt\Protocol\MqttVersion;
 use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
 use ScienceStories\Mqtt\Protocol\Packet\PacketType;
 use ScienceStories\Mqtt\Protocol\Packet\Publish;
+use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 use ScienceStories\Mqtt\Protocol\V311\Decoder as V311Decoder;
 use ScienceStories\Mqtt\Protocol\V311\Encoder as V311Encoder;
 use ScienceStories\Mqtt\Protocol\V5\Decoder as V5Decoder;
@@ -56,8 +57,7 @@ final class Client implements ClientInterface
 
     private bool $shouldStop = false;
 
-    /** @var array{packetId:int,codes:list<int>}|null */
-    private ?array $lastSubAck = null;
+    private ?SubAck $lastSubAck = null;
 
     /** @var array{packetId:int,codes:list<int>}|null */
     private ?array $lastUnsubAck = null;
@@ -396,17 +396,17 @@ final class Client implements ClientInterface
                 continue;
             }
             // loopOnce handles SUBACK internally and stores last; break when found
-            if (isset($this->lastSubAck) && $this->lastSubAck['packetId'] === $pid) {
-                $codes = $this->lastSubAck['codes'];
+            if (isset($this->lastSubAck) && $this->lastSubAck->packetId === $pid) {
+                $subAck = $this->lastSubAck;
                 unset($this->lastSubAck);
-                $this->logger->info('SUBACK', ['packetId' => $pid, 'codes' => $codes]);
+                $this->logger->info('SUBACK', ['packetId' => $pid, 'codes' => $subAck->returnCodes]);
 
                 // Record subscriptions if this is a user-initiated subscribed (avoid duplicate records during resubscribe)
                 if (! $this->isResubscribing) {
                     $this->recordSubscriptionsFromFilters($filters, $options);
                 }
 
-                return new SubscribeResult($pid, $codes);
+                return new SubscribeResult($pid, $subAck->returnCodes, $subAck);
             }
         }
     }

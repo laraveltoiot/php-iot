@@ -8,6 +8,7 @@ use ScienceStories\Mqtt\Client\InboundMessage;
 use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck; // reuse DTO
+use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
@@ -189,11 +190,56 @@ final class Decoder implements DecoderInterface
     }
 
     /**
+     * Parse MQTT 5.0 SUBACK properties.
+     * Recognized keys:
+     *  - reason_string (0x1F): string
+     *  - user_properties (0x26): array<string,string>
+     *
+     * @return array<string, mixed>
+     */
+    private function parseSubAckProperties(string $props): array
+    {
+        $out = [];
+        $i   = 0;
+        $n   = \strlen($props);
+        while ($i < $n) {
+            $id = \ord($props[$i++]);
+            switch ($id) {
+                case 0x1F: // Reason String (string)
+                    $off                  = $i;
+                    $out['reason_string'] = Bytes::decodeString($props, $off);
+                    $i                    = $off;
+                    break;
+                case 0x26: // User Property (key,value)
+                    $off                        = $i;
+                    $k                          = Bytes::decodeString($props, $off);
+                    $v                          = Bytes::decodeString($props, $off);
+                    $i                          = $off;
+                    $out['user_properties'][$k] = $v;
+                    break;
+                default:
+                    // Unknown property: stop parsing for safety
+                    $i = $n;
+                    break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Decode SUBACK: packetId (2) + properties(varint+props) + payload reason codes.
      *
-     * @return array{packetId:int, codes:list<int>}
+     * MQTT 5.0 SUBACK structure:
+     * - Packet Identifier (2 bytes)
+     * - Properties (varint length + properties)
+     *   * reason_string (0x1F): string
+     *   * user_properties (0x26): key-value pairs
+     * - Reason codes (1 byte per subscription)
+     *   * 0x00-0x02: Granted QoS 0, 1, or 2
+     *   * 0x80+: Various failure codes
      */
-    public function decodeSubAck(string $packetBody): array
+    public function decodeSubAck(string $packetBody): SubAck
     {
         if (\strlen($packetBody) < 4) { // minimal: id(2)+props_len(1)+empty
             throw new ProtocolError('SUBACK too short');
@@ -204,20 +250,25 @@ final class Decoder implements DecoderInterface
         }
         $pid    = (int) $arr[1];
         $offset = 2;
-        // properties length
+        // Properties
         $rest     = substr($packetBody, $offset);
         $consumed = 0;
         $propLen  = Bytes::decodeVarInt($rest, $consumed);
-        $offset += $consumed + $propLen;
-        if ($offset > \strlen($packetBody)) {
+        $offset += $consumed;
+        if ($offset + $propLen > \strlen($packetBody)) {
             throw new ProtocolError('SUBACK properties truncated');
         }
+        $propsRaw = substr($packetBody, $offset, $propLen);
+        $offset += $propLen;
+        $propsMap = $propLen > 0 ? $this->parseSubAckProperties($propsRaw) : null;
+
+        // Reason codes
         $codes = [];
         for ($i = $offset, $n = \strlen($packetBody); $i < $n; $i++) {
             $codes[] = \ord($packetBody[$i]);
         }
 
-        return ['packetId' => $pid, 'codes' => $codes];
+        return new SubAck($pid, $codes, $propsMap);
     }
 
     /**

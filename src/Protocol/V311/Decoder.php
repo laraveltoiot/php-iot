@@ -8,6 +8,7 @@ use ScienceStories\Mqtt\Client\InboundMessage;
 use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
+use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
@@ -41,9 +42,13 @@ final class Decoder implements DecoderInterface
     /**
      * Decode SUBACK body: packetId (2) + payload (list of return codes).
      *
-     * @return array{packetId:int, codes:list<int>}
+     * MQTT 3.1.1 SUBACK structure:
+     * - Packet Identifier (2 bytes)
+     * - Return codes (1 byte per subscription)
+     *   * 0x00-0x02: Success with granted QoS 0, 1, or 2
+     *   * 0x80: Failure
      */
-    public function decodeSubAck(string $packetBody): array
+    public function decodeSubAck(string $packetBody): SubAck
     {
         if (\strlen($packetBody) < 2) {
             throw new ProtocolError('SUBACK too short');
@@ -60,7 +65,7 @@ final class Decoder implements DecoderInterface
             $codes[] = \ord($rest[$i]);
         }
 
-        return ['packetId' => $pid, 'codes' => $codes];
+        return new SubAck($pid, $codes);
     }
 
     /**
