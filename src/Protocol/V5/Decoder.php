@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Protocol\V5;
 
 use ScienceStories\Mqtt\Client\InboundMessage;
+use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck; // reuse DTO
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**
- * Decoder for MQTT 5.0 packets (CONNACK, SUBACK, PUBLISH inbound with properties).
+ * Decoder for MQTT 5.0 packets.
+ *
+ * Decodes packets according to the MQTT 5.0 specification (protocol level 5).
+ * - Supports properties field with extensive metadata
+ * - Reason codes instead of simple return codes
+ * - Enhanced error information with reason strings and user properties
  */
-final class Decoder
+final class Decoder implements DecoderInterface
 {
     /**
      * Decode bytes of a CONNACK packet body for v5.

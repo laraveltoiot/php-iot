@@ -8,6 +8,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use ScienceStories\Mqtt\Contract\ClientInterface;
+use ScienceStories\Mqtt\Contract\DecoderInterface;
+use ScienceStories\Mqtt\Contract\EncoderInterface;
 use ScienceStories\Mqtt\Contract\MetricsInterface;
 use ScienceStories\Mqtt\Contract\TransportInterface;
 use ScienceStories\Mqtt\Events\MessageReceived as EvMessageReceived;
@@ -36,9 +38,9 @@ final class Client implements ClientInterface
 
     private Options $options;
 
-    private V311Encoder|V5Encoder $encoder;
+    private EncoderInterface $encoder;
 
-    private V311Decoder|V5Decoder $decoder;
+    private DecoderInterface $decoder;
 
     private LoggerInterface $logger;
 
@@ -120,7 +122,7 @@ final class Client implements ClientInterface
         }
     }
 
-    public function __construct(Options $options, TransportInterface $transport, V311Encoder|V5Encoder|null $enc = null, V311Decoder|V5Decoder|null $dec = null, ?LoggerInterface $logger = null, ?EventDispatcherInterface $events = null, ?MetricsInterface $metrics = null)
+    public function __construct(Options $options, TransportInterface $transport, ?EncoderInterface $enc = null, ?DecoderInterface $dec = null, ?LoggerInterface $logger = null, ?EventDispatcherInterface $events = null, ?MetricsInterface $metrics = null)
     {
         $this->options   = $options;
         $this->transport = $transport;
@@ -228,6 +230,7 @@ final class Client implements ClientInterface
             $versionStr,
             $connack->returnCode,
             $assignedId,
+            $connack,
         );
     }
 

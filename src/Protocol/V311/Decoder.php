@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Protocol\V311;
 
 use ScienceStories\Mqtt\Client\InboundMessage;
+use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
 use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**
- * Decoder for MQTT 3.1.1 packets (CONNACK, SUBACK, PUBLISH inbound).
+ * Decoder for MQTT 3.1.1 packets.
+ *
+ * Decodes packets according to the MQTT 3.1.1 specification (protocol level 4).
+ * - No properties field (properties are MQTT 5.0 only)
+ * - Simple return codes (0 = accepted, 1-5 = various error conditions)
  */
-final class Decoder
+final class Decoder implements DecoderInterface
 {
     /**
      * Decode bytes of a CONNACK packet body (variable header + payload).

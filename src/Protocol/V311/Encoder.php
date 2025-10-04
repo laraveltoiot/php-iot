@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Protocol\V311;
 
 use ScienceStories\Mqtt\Client\SubscribeOptions;
+use ScienceStories\Mqtt\Contract\EncoderInterface;
 use ScienceStories\Mqtt\Protocol\Packet\Connect;
 use ScienceStories\Mqtt\Protocol\Packet\PacketType;
 use ScienceStories\Mqtt\Protocol\Packet\Publish;
-use ScienceStories\Mqtt\Protocol\QoS;
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**
- * Encoder for MQTT 3.1.1 packets (CONNECT, PUBLISH QoS0, SUBSCRIBE).
+ * Encoder for MQTT 3.1.1 packets.
+ *
+ * Encodes packets according to the MQTT 3.1.1 specification (protocol level 4).
+ * - No properties field (properties are MQTT 5.0 only)
+ * - Clean Session flag instead of Clean Start
+ * - Maximum packet size is implementation-dependent
  */
-final class Encoder
+final class Encoder implements EncoderInterface
 {
     /**
      * Build a CONNECT packet byte for MQTT 3.1.1.

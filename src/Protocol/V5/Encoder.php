@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace ScienceStories\Mqtt\Protocol\V5;
 
 use ScienceStories\Mqtt\Client\SubscribeOptions;
+use ScienceStories\Mqtt\Contract\EncoderInterface;
 use ScienceStories\Mqtt\Protocol\Packet\Connect; // reuse DTO
 use ScienceStories\Mqtt\Protocol\Packet\PacketType; // reuse DTO
 use ScienceStories\Mqtt\Protocol\Packet\Publish; // codes are identical in v5
 use ScienceStories\Mqtt\Util\Bytes;
 
 /**
- * Encoder for MQTT 5.0 packets (CONNECT, PUBLISH QoS0 with properties, SUBSCRIBE).
+ * Encoder for MQTT 5.0 packets.
+ *
+ * Encodes packets according to the MQTT 5.0 specification (protocol level 5).
+ * - Supports properties field for enhanced features
+ * - Clean Start flag instead of Clean Session
+ * - Extended authentication, topic aliases, user properties, and more
  */
-final class Encoder
+final class Encoder implements EncoderInterface
 {
     /**
      * Build a CONNECT packet byte for MQTT 5.0.
