@@ -1,6 +1,23 @@
 # Changelog
 
 
+## [1.0.10] - 2025-10-04
+
+### Added
+- Unsubscribe packet model (Unsubscribe.php) with comprehensive documentation for MQTT 3.1.1 and 5.0
+- Detailed explanation of topic filter matching in Unsubscribe (including wildcard support)
+- 5 usage examples in Unsubscribe.php demonstrating various unsubscription patterns
+- Packet structure documentation for both MQTT 3.1.1 and 5.0 versions
+- Comparison between SUBSCRIBE and UNSUBSCRIBE packets for clarity
+- Important notes about MQTT version differences (3.1.1 implicit success vs 5.0 reason codes)
+- MQTT 5.0 properties documentation (user_properties support)
+
+### Notes
+- Unsubscribe packet model completes the packet model collection alongside Connect, Publish, Subscribe, etc.
+- Provides consistency in documentation and code structure across all packet types
+- Topic filters in UNSUBSCRIBE must match exactly the filters used in SUBSCRIBE (including wildcards)
+- No QoS levels in UNSUBSCRIBE (QoS is only relevant for subscriptions, not unsubscriptions)
+
 ## [1.0.9] - 2025-10-04
 
 ### Added

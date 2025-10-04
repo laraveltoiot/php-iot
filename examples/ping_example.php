@@ -85,7 +85,7 @@ try {
     $duration  = (microtime(true) - $startTime) * 1000;
 
     if ($success) {
-        echo "   ✅ PINGRESP received in ".number_format($duration, 2)." ms\n";
+        echo '   ✅ PINGRESP received in '.number_format($duration, 2)." ms\n";
         echo "   Broker is alive and responsive\n\n";
     } else {
         echo "   ❌ PINGRESP not received (timeout)\n\n";
@@ -131,7 +131,7 @@ try {
     echo "📨 Example 3: Observing auto-ping behavior\n";
     echo "   Keepalive is set to {$options->keepAlive} seconds\n";
     echo "   Waiting 25 seconds to observe automatic PINGREQ...\n";
-    echo "   (Auto-ping triggers at ~90% of keepalive interval: ~".($options->keepAlive * 0.9)." seconds)\n\n";
+    echo '   (Auto-ping triggers at ~90% of keepalive interval: ~'.($options->keepAlive * 0.9)." seconds)\n\n";
 
     $startTime    = time();
     $duration     = 25;
@@ -221,7 +221,7 @@ try {
     $duration  = (microtime(true) - $startTime) * 1000;
 
     if ($success) {
-        echo "   ✅ PINGRESP received in ".number_format($duration, 2)." ms\n";
+        echo '   ✅ PINGRESP received in '.number_format($duration, 2)." ms\n";
         echo "   Broker is alive and responsive\n\n";
     } else {
         echo "   ❌ PINGRESP not received (timeout)\n\n";
@@ -241,7 +241,7 @@ try {
             echo "   ✅ Network is functional\n\n";
         }
     } catch (Exception $e) {
-        echo "   ❌ Connection health check failed: ".$e->getMessage()."\n\n";
+        echo '   ❌ Connection health check failed: '.$e->getMessage()."\n\n";
     }
 
     echo "📊 Summary (MQTT 5.0):\n";

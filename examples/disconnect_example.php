@@ -153,7 +153,7 @@ try {
     $client->disconnect('Normal disconnection');
     echo "   ✅ Disconnected successfully\n\n";
 } catch (Throwable $e) {
-    fwrite(STDERR, "   ❌ Error: ".$e->getMessage()."\n\n");
+    fwrite(STDERR, '   ❌ Error: '.$e->getMessage()."\n\n");
 }
 
 // ============================================================================
@@ -206,7 +206,7 @@ try {
     $client->disconnect('Disconnect with Will Message');
     echo "   ✅ Disconnected successfully\n\n";
 } catch (Throwable $e) {
-    fwrite(STDERR, "   ❌ Error: ".$e->getMessage()."\n\n");
+    fwrite(STDERR, '   ❌ Error: '.$e->getMessage()."\n\n");
 }
 
 // ============================================================================
@@ -262,12 +262,12 @@ try {
     $disconnectTime = microtime(true);
     $duration       = $disconnectTime - $connectTime;
 
-    echo "   Connection duration: ".number_format($duration, 2)." seconds\n";
+    echo '   Connection duration: '.number_format($duration, 2)." seconds\n";
     echo "   Sending clean DISCONNECT...\n";
     $client->disconnect('Session completed');
     echo "   ✅ Disconnected successfully\n\n";
 } catch (Throwable $e) {
-    fwrite(STDERR, "   ❌ Error: ".$e->getMessage()."\n\n");
+    fwrite(STDERR, '   ❌ Error: '.$e->getMessage()."\n\n");
 }
 
 // ============================================================================
