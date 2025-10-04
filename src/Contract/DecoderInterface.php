@@ -7,6 +7,10 @@ namespace ScienceStories\Mqtt\Contract;
 use ScienceStories\Mqtt\Client\InboundMessage;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
+use ScienceStories\Mqtt\Protocol\Packet\PubAck;
+use ScienceStories\Mqtt\Protocol\Packet\PubComp;
+use ScienceStories\Mqtt\Protocol\Packet\PubRec;
+use ScienceStories\Mqtt\Protocol\Packet\PubRel;
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 
@@ -52,7 +56,7 @@ interface DecoderInterface
      * @param  int  $flags  Fixed header flags (bits 0-3 of first byte)
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
      * @return InboundMessage Decoded PUBLISH message
-     * @throws ProtocolError If packet is malformed
+     * @throws ProtocolError If a packet is malformed
      */
     public function decodePublish(int $flags, string $packetBody): InboundMessage;
 
@@ -65,7 +69,62 @@ interface DecoderInterface
      *
      * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
      * @return UnsubAck Decoded UNSUBACK packet with packet ID, reason codes (MQTT 5.0), and properties (MQTT 5.0)
-     * @throws ProtocolError If packet is malformed
+     * @throws ProtocolError If a packet is malformed
      */
     public function decodeUnsubAck(string $packetBody): UnsubAck;
+
+    /**
+     * Decode a PUBACK packet from binary format.
+     *
+     * The PUBACK packet is the QoS 1 acknowledgment sent in response to a PUBLISH packet.
+     * For MQTT 3.1.1, it contains only the packet identifier.
+     * For MQTT 5.0, it also includes a reason code and optional properties for error reporting.
+     *
+     * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
+     * @return PubAck Decoded PUBACK packet with packet ID, reason code (MQTT 5.0), and properties (MQTT 5.0)
+     * @throws ProtocolError If packet is malformed
+     */
+    public function decodePubAck(string $packetBody): PubAck;
+
+    /**
+     * Decode a PUBREC packet from binary format.
+     *
+     * The PUBREC packet is the first QoS 2 acknowledgment sent in response to a PUBLISH packet.
+     * It confirms receipt of the message and initiates the QoS 2 handshake.
+     * For MQTT 3.1.1, it contains only the packet identifier.
+     * For MQTT 5.0, it also includes a reason code and optional properties for error reporting.
+     *
+     * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
+     * @return PubRec Decoded PUBREC packet with packet ID, reason code (MQTT 5.0), and properties (MQTT 5.0)
+     * @throws ProtocolError If packet is malformed
+     */
+    public function decodePubRec(string $packetBody): PubRec;
+
+    /**
+     * Decode a PUBREL packet from binary format.
+     *
+     * The PUBREL packet is the second step in the QoS 2 handshake, sent in response to PUBREC.
+     * It releases the message for delivery to the application.
+     * For MQTT 3.1.1, it contains only the packet identifier.
+     * For MQTT 5.0, it also includes a reason code and optional properties.
+     *
+     * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
+     * @return PubRel Decoded PUBREL packet with packet ID, reason code (MQTT 5.0), and properties (MQTT 5.0)
+     * @throws ProtocolError If packet is malformed
+     */
+    public function decodePubRel(string $packetBody): PubRel;
+
+    /**
+     * Decode a PUBCOMP packet from binary format.
+     *
+     * The PUBCOMP packet is the final QoS 2 acknowledgment sent in response to PUBREL.
+     * It confirms completion of the QoS 2 message delivery (exactly once guarantee).
+     * For MQTT 3.1.1, it contains only the packet identifier.
+     * For MQTT 5.0, it also includes a reason code and optional properties.
+     *
+     * @param  string  $packetBody  Binary packet body (variable header + payload, excluding fixed header)
+     * @return PubComp Decoded PUBCOMP packet with packet ID, reason code (MQTT 5.0), and properties (MQTT 5.0)
+     * @throws ProtocolError If packet is malformed
+     */
+    public function decodePubComp(string $packetBody): PubComp;
 }

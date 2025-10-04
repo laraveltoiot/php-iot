@@ -8,6 +8,10 @@ use ScienceStories\Mqtt\Client\InboundMessage;
 use ScienceStories\Mqtt\Contract\DecoderInterface;
 use ScienceStories\Mqtt\Exception\ProtocolError;
 use ScienceStories\Mqtt\Protocol\Packet\ConnAck;
+use ScienceStories\Mqtt\Protocol\Packet\PubAck;
+use ScienceStories\Mqtt\Protocol\Packet\PubComp;
+use ScienceStories\Mqtt\Protocol\Packet\PubRec;
+use ScienceStories\Mqtt\Protocol\Packet\PubRel;
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 use ScienceStories\Mqtt\Protocol\QoS;
@@ -128,5 +132,97 @@ final class Decoder implements DecoderInterface
         $pid = (int) $arr[1];
 
         return new UnsubAck($pid);
+    }
+
+    /**
+     * Decode PUBACK body: packetId only in v3.1.1.
+     *
+     * MQTT 3.1.1 PUBACK structure:
+     * - Packet Identifier (2 bytes)
+     * - No reason code (implicit success)
+     * - No properties
+     */
+    public function decodePubAck(string $packetBody): PubAck
+    {
+        if (\strlen($packetBody) < 2) {
+            throw new ProtocolError('PUBACK too short');
+        }
+        $arr = unpack('n', substr($packetBody, 0, 2));
+        if ($arr === false || ! isset($arr[1]) || ! \is_int($arr[1])) {
+            throw new ProtocolError('PUBACK malformed packet id');
+        }
+
+        $pid = (int) $arr[1];
+
+        return new PubAck($pid, 0, null);
+    }
+
+    /**
+     * Decode PUBREC body: packetId only in v3.1.1.
+     *
+     * MQTT 3.1.1 PUBREC structure:
+     * - Packet Identifier (2 bytes)
+     * - No reason code (implicit success)
+     * - No properties
+     */
+    public function decodePubRec(string $packetBody): PubRec
+    {
+        if (\strlen($packetBody) < 2) {
+            throw new ProtocolError('PUBREC too short');
+        }
+        $arr = unpack('n', substr($packetBody, 0, 2));
+        if ($arr === false || ! isset($arr[1]) || ! \is_int($arr[1])) {
+            throw new ProtocolError('PUBREC malformed packet id');
+        }
+
+        $pid = (int) $arr[1];
+
+        return new PubRec($pid, 0, null);
+    }
+
+    /**
+     * Decode PUBREL body: packetId only in v3.1.1.
+     *
+     * MQTT 3.1.1 PUBREL structure:
+     * - Packet Identifier (2 bytes)
+     * - No reason code (implicit success)
+     * - No properties
+     */
+    public function decodePubRel(string $packetBody): PubRel
+    {
+        if (\strlen($packetBody) < 2) {
+            throw new ProtocolError('PUBREL too short');
+        }
+        $arr = unpack('n', substr($packetBody, 0, 2));
+        if ($arr === false || ! isset($arr[1]) || ! \is_int($arr[1])) {
+            throw new ProtocolError('PUBREL malformed packet id');
+        }
+
+        $pid = (int) $arr[1];
+
+        return new PubRel($pid, 0, null);
+    }
+
+    /**
+     * Decode PUBCOMP body: packetId only in v3.1.1.
+     *
+     * MQTT 3.1.1 PUBCOMP structure:
+     * - Packet Identifier (2 bytes)
+     * - No reason code (implicit success)
+     * - No properties
+     */
+    public function decodePubComp(string $packetBody): PubComp
+    {
+        if (\strlen($packetBody) < 2) {
+            throw new ProtocolError('PUBCOMP too short');
+        }
+        $arr = unpack('n', substr($packetBody, 0, 2));
+        if ($arr === false || ! isset($arr[1]) || ! \is_int($arr[1])) {
+            throw new ProtocolError('PUBCOMP malformed packet id');
+        }
+
+        $pid = (int) $arr[1];
+
+        return new PubComp($pid, 0, null);
     }
 }

@@ -21,7 +21,11 @@ use ScienceStories\Mqtt\Exception\TransportError;
 use ScienceStories\Mqtt\Protocol\MqttVersion;
 use ScienceStories\Mqtt\Protocol\Packet\Connect as ConnectPacket;
 use ScienceStories\Mqtt\Protocol\Packet\PacketType;
+use ScienceStories\Mqtt\Protocol\Packet\PubAck;
+use ScienceStories\Mqtt\Protocol\Packet\PubComp;
 use ScienceStories\Mqtt\Protocol\Packet\Publish;
+use ScienceStories\Mqtt\Protocol\Packet\PubRec;
+use ScienceStories\Mqtt\Protocol\Packet\PubRel;
 use ScienceStories\Mqtt\Protocol\Packet\SubAck;
 use ScienceStories\Mqtt\Protocol\Packet\UnsubAck;
 use ScienceStories\Mqtt\Protocol\V311\Decoder as V311Decoder;
@@ -66,9 +70,9 @@ final class Client implements ClientInterface
 
     private bool $pingOutstanding = false;
 
-    private ?int $lastPubAck = null;
+    private ?PubAck $lastPubAck = null;
 
-    private ?int $lastPubComp = null;
+    private ?PubComp $lastPubComp = null;
 
     /** @var array<int, InboundMessage> QoS2 inbound pending messages by Packet Identifier */
     private array $qos2InboundPending = [];
@@ -305,8 +309,8 @@ final class Client implements ClientInterface
                         continue;
                     }
                     $ack = $this->lastPubAck;
-                    if (\is_int($ack) && $ack === $pid) {
-                        $this->logger->info('PUBACK', ['packetId' => $ack]);
+                    if ($ack instanceof PubAck && $ack->packetId === $pid) {
+                        $this->logger->info('PUBACK', ['packetId' => $ack->packetId, 'reasonCode' => $ack->reasonCode, 'success' => $ack->isSuccess()]);
                         $this->lastPubAck = null;
 
                         return $pid;
@@ -329,8 +333,8 @@ final class Client implements ClientInterface
                     // Completion when PUBCOMP arrives for our packetId
                     $comp = $this->lastPubComp;
                     // @phpstan-ignore-next-line state is updated by loopOnce()
-                    if (\is_int($comp) && $comp === $pid) {
-                        $this->logger->info('PUBCOMP', ['packetId' => $comp]);
+                    if ($comp instanceof PubComp && $comp->packetId === $pid) {
+                        $this->logger->info('PUBCOMP', ['packetId' => $comp->packetId, 'reasonCode' => $comp->reasonCode, 'success' => $comp->isSuccess()]);
                         $this->lastPubComp = null;
 
                         return $pid;
@@ -569,57 +573,66 @@ final class Client implements ClientInterface
 
                 return true;
             case PacketType::PUBACK->value:
-                // Minimal PUBACK handling: first 2 bytes are Packet Identifier (v3 and v5). Extra v5 fields ignored.
-                if ($rl >= 2) {
-                    $this->lastPubAck = $this->unpackPacketId(substr($body, 0, 2));
-                    $this->logger->debug('<< PUBACK', ['packetId' => $this->lastPubAck]);
-                } else {
-                    $this->logger->debug('<< PUBACK (invalid length)', ['len' => $rl]);
-                }
+                // QoS 1 acknowledgment: decode full packet with reason code and properties
+                $dec              = $this->decoder;
+                $this->lastPubAck = $dec->decodePubAck($body);
+                $this->logger->debug('<< PUBACK', [
+                    'packetId'   => $this->lastPubAck->packetId,
+                    'reasonCode' => $this->lastPubAck->reasonCode,
+                    'success'    => $this->lastPubAck->isSuccess(),
+                ]);
 
                 return true;
             case PacketType::PUBREL->value:
-                // PUBREL acknowledges receipt of PUBREC; respond with PUBCOMP and deliver stored message (QoS2 Rx)
-                if ($rl >= 2) {
-                    $pid     = $this->unpackPacketId(substr($body, 0, 2));
-                    $pubcomp = \chr(PacketType::PUBCOMP->value << 4).\chr(2).pack('n', $pid);
-                    $this->logger->debug('>> PUBCOMP', ['packetId' => $pid]);
-                    $this->transport->write($pubcomp);
-                    $this->touchActivity();
-                    if (isset($this->qos2InboundPending[$pid])) {
-                        $msg = $this->qos2InboundPending[$pid];
-                        unset($this->qos2InboundPending[$pid]);
-                        // Now deliver exactly once (subject to client-side filters)
-                        $this->logger->debug('<< PUBLISH (QoS2 complete)', ['topic' => $msg->topic, 'packetId' => $pid]);
-                        $this->deliverIfMatches($msg);
-                    }
-                } else {
-                    $this->logger->debug('<< PUBREL (invalid length)', ['len' => $rl]);
+                // QoS 2 step 2 (Rx): decode PUBREL, respond with PUBCOMP, and deliver stored message
+                $dec    = $this->decoder;
+                $pubrel = $dec->decodePubRel($body);
+                $pid    = $pubrel->packetId;
+                $this->logger->debug('<< PUBREL', [
+                    'packetId'   => $pid,
+                    'reasonCode' => $pubrel->reasonCode,
+                    'success'    => $pubrel->isSuccess(),
+                ]);
+                // Send PUBCOMP response
+                $pubcomp = \chr(PacketType::PUBCOMP->value << 4).\chr(2).pack('n', $pid);
+                $this->logger->debug('>> PUBCOMP', ['packetId' => $pid]);
+                $this->transport->write($pubcomp);
+                $this->touchActivity();
+                // Deliver stored message if pending
+                if (isset($this->qos2InboundPending[$pid])) {
+                    $msg = $this->qos2InboundPending[$pid];
+                    unset($this->qos2InboundPending[$pid]);
+                    $this->logger->debug('<< PUBLISH (QoS2 complete)', ['topic' => $msg->topic, 'packetId' => $pid]);
+                    $this->deliverIfMatches($msg);
                 }
 
                 return true;
             case PacketType::PUBREC->value:
-                // Tx side: upon PUBREC, respond with PUBREL and note packet id
-                if ($rl >= 2) {
-                    $pid = $this->unpackPacketId(substr($body, 0, 2));
-                    // Send PUBREL (flags 0x02)
-                    $pubrel = \chr((PacketType::PUBREL->value << 4) | 0x02).\chr(2).pack('n', $pid);
-                    $this->logger->debug('>> PUBREL', ['packetId' => $pid]);
-                    $this->transport->write($pubrel);
-                    $this->touchActivity();
-                } else {
-                    $this->logger->debug('<< PUBREC (invalid length)', ['len' => $rl]);
-                }
+                // QoS 2 step 1 (Tx): decode PUBREC, respond with PUBREL
+                $dec    = $this->decoder;
+                $pubrec = $dec->decodePubRec($body);
+                $pid    = $pubrec->packetId;
+                $this->logger->debug('<< PUBREC', [
+                    'packetId'   => $pid,
+                    'reasonCode' => $pubrec->reasonCode,
+                    'success'    => $pubrec->isSuccess(),
+                ]);
+                // Send PUBREL response (flags 0x02)
+                $pubrel = \chr((PacketType::PUBREL->value << 4) | 0x02).\chr(2).pack('n', $pid);
+                $this->logger->debug('>> PUBREL', ['packetId' => $pid]);
+                $this->transport->write($pubrel);
+                $this->touchActivity();
 
                 return true;
             case PacketType::PUBCOMP->value:
-                // Tx side final ack for QoS2
-                if ($rl >= 2) {
-                    $this->lastPubComp = $this->unpackPacketId(substr($body, 0, 2));
-                    $this->logger->debug('<< PUBCOMP', ['packetId' => $this->lastPubComp]);
-                } else {
-                    $this->logger->debug('<< PUBCOMP (invalid length)', ['len' => $rl]);
-                }
+                // QoS 2 step 3 (Tx): decode final PUBCOMP acknowledgment
+                $dec               = $this->decoder;
+                $this->lastPubComp = $dec->decodePubComp($body);
+                $this->logger->debug('<< PUBCOMP', [
+                    'packetId'   => $this->lastPubComp->packetId,
+                    'reasonCode' => $this->lastPubComp->reasonCode,
+                    'success'    => $this->lastPubComp->isSuccess(),
+                ]);
 
                 return true;
             case PacketType::DISCONNECT->value:
@@ -840,17 +853,6 @@ final class Client implements ClientInterface
         $hex = strtoupper(bin2hex($s));
 
         return trim(chunk_split($hex, 2, ' ')).(\strlen($bytes) > 64 ? ' …' : '');
-    }
-
-    private function unpackPacketId(string $twoBytes): int
-    {
-        /** @var array{pid:int}|false $arr */
-        $arr = unpack('npid', $twoBytes);
-        if (\is_array($arr)) {
-            return $arr['pid'];
-        }
-
-        return 0;
     }
 
     private function deliverIfMatches(InboundMessage $msg): void

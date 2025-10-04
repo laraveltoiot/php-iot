@@ -1,6 +1,39 @@
 # Changelog
 
 
+## [1.0.8] - 2025-10-04
+
+### Added
+- PubAck packet model (PubAck.php) with comprehensive documentation for MQTT 3.1.1 and 5.0 QoS 1 acknowledgments
+- PubRec packet model (PubRec.php) with comprehensive documentation for MQTT 3.1.1 and 5.0 QoS 2 step 1
+- PubRel packet model (PubRel.php) with comprehensive documentation for MQTT 3.1.1 and 5.0 QoS 2 step 2
+- PubComp packet model (PubComp.php) with comprehensive documentation for MQTT 3.1.1 and 5.0 QoS 2 step 3
+- MQTT 5.0 reason code descriptions for all QoS acknowledgment packets (0x00=Success, 0x10=No matching subscribers, 0x80+=errors)
+- Helper methods in all QoS packets: isSuccess(), isError(), getReasonDescription()
+- MQTT 5.0 property accessors in all QoS packets: getReasonString(), getUserProperties()
+- DecoderInterface methods: decodePubAck(), decodePubRec(), decodePubRel(), decodePubComp()
+- V311\Decoder implementations for all four QoS acknowledgment packets (simple packet ID only)
+- V5\Decoder implementations for all four QoS acknowledgment packets with reason codes and properties
+- V5\Decoder::parseQoSAckProperties() helper method for parsing reason_string and user_properties
+- New QoS 0 example (qos0_example.php) demonstrating fire-and-forget publishing with both MQTT versions
+- Comprehensive QoS flow documentation in all packet models explaining four-packet handshake
+
+### Enhanced
+- Client.php property types: lastPubAck changed from ?int to ?PubAck, lastPubComp changed from ?int to ?PubComp
+- Client.php::publish() QoS 1 handling to check PubAck object with reason code logging
+- Client.php::publish() QoS 2 handling to check PubComp object with reason code logging
+- Client.php::loopOnce() PUBACK handler to use decoder and log reason codes and success status
+- Client.php::loopOnce() PUBREC handler to use decoder and log reason codes and success status
+- Client.php::loopOnce() PUBREL handler to use decoder and log reason codes and success status
+- Client.php::loopOnce() PUBCOMP handler to use decoder and log reason codes and success status
+- All QoS acknowledgment logging to include packetId, reasonCode, and success status for better debugging
+- Type safety throughout QoS handling with proper packet objects instead of raw integers
+
+### Fixed
+- MQTT 5.0 reason code inspection now fully supported for QoS 1 and QoS 2 flows
+- Proper error detection and reporting for failed QoS acknowledgments
+- Type safety in QoS acknowledgment handling with packet objects
+
 ## [1.0.7] - 2025-10-04
 
 ### Added
