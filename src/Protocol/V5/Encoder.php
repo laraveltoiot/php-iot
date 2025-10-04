@@ -104,18 +104,30 @@ final class Encoder implements EncoderInterface
     }
 
     /**
-     * Encode PUBLISH (QoS0). Adds MQTT 5 properties when provided on the packet.
+     * Encode a PUBLISH packet for MQTT 5.0.
+     *
+     * Packet structure:
+     * - Fixed Header: Type (3), DUP, QoS, RETAIN flags
+     * - Variable Header: Topic name, Packet Identifier (if QoS > 0), Properties
+     * - Payload: Application message
+     *
+     * MQTT 5.0 includes a property field for enhanced features like content type,
+     * message expiry, topic aliases, response topic, correlation data, and user properties.
+     *
+     * @throws \LogicException If QoS > 0 and packetId is not provided
      */
     public function encodePublish(Publish $pkt): string
     {
+        // Fixed Header: construct flags byte with DUP, QoS, and RETAIN
         $fixedHeader = ($pkt->dup ? 0x08 : 0x00);
         $fixedHeader |= ($pkt->qos->value << 1);
         $fixedHeader |= ($pkt->retain ? 0x01 : 0x00);
         $fixedHeader |= (PacketType::PUBLISH->value << 4);
 
+        // Variable Header: topic name
         $variableHeader = Bytes::encodeString($pkt->topic);
 
-        // For QoS1/2 include Packet Identifier before properties
+        // For QoS 1/2, include Packet Identifier before properties
         if ($pkt->qos->value > 0) {
             if ($pkt->packetId === null) {
                 throw new \LogicException('QoS>0 requires packetId in Publish packet');
@@ -123,12 +135,14 @@ final class Encoder implements EncoderInterface
             $variableHeader .= pack('n', $pkt->packetId);
         }
 
-        // MQTT 5 requires a Properties field in PUBLISH variable header (after packetId if QoS>0)
+        // MQTT 5.0 requires a Properties field in the PUBLISH variable header (after packetId if QoS>0)
         $props = $this->encodePublishProperties($pkt->properties ?? []);
         $variableHeader .= Bytes::encodeVarInt(\strlen($props)).$props;
 
+        // Payload: application message (can be empty)
         $payload = $pkt->payload;
 
+        // Calculate the remaining length
         $remainingLength = \strlen($variableHeader) + \strlen($payload);
 
         return \chr($fixedHeader).
@@ -259,7 +273,7 @@ final class Encoder implements EncoderInterface
             $out .= \chr(0x09).Bytes::encodeString($this->toBinary($properties['correlation_data']));
         }
 
-        // Topic Alias (0x23) - two byte integer
+        // Topic Alias (0x23) - two-byte integer
         if (\array_key_exists('topic_alias', $properties)) {
             $out .= \chr(0x23).pack('n', $this->toUInt16($properties['topic_alias']));
         }
@@ -275,7 +289,7 @@ final class Encoder implements EncoderInterface
     }
 
     /**
-     * @param  array<mixed,mixed>  $up
+     * @param array<array-key, mixed> $up
      * @return list<array{0:string,1:string}>
      */
     private function normalizeUserProperties(array $up): array

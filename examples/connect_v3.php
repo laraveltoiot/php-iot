@@ -7,7 +7,6 @@ use ScienceStories\Mqtt\Client\Client;
 use ScienceStories\Mqtt\Client\Options;
 use ScienceStories\Mqtt\Protocol\MqttVersion;
 use ScienceStories\Mqtt\Transport\TcpTransport;
-use ScienceStories\Mqtt\Util\RandomId;
 
 require __DIR__.'/../vendor/autoload.php';
 

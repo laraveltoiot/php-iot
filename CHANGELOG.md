@@ -1,6 +1,22 @@
 # Changelog
 
-## [1.0.3] - 2025-01-03
+
+## [1.0.4] - 2025-10-04
+
+### Added
+- Comprehensive documentation for Publish a packet explaining MQTT 3.1.1 vs. 5.0 differences
+- Detailed usage examples in Publish.php showing QoS levels, retain flag, and MQTT 5.0 properties
+- New focused publishing examples (publish_v3.php, publish_v5.php) demonstrating all QoS levels and properties
+- publish_v3.php: MQTT 3.1.1 publishing with QoS 0/1/2 and retained messages
+- publish_v5.php: MQTT 5.0 publishing with comprehensive properties demonstration (content_type, message_expiry_interval, user_properties, response_topic, correlation_data, payload_format_indicator)
+
+### Enhanced
+- Publish.php expanded from 37 to 110 lines with detailed documentation
+- V311\Encoder::encodePublish() with comprehensive docblock and inline comments
+- V5\Encoder::encodePublish() with detailed packet structure explanation
+- Publish a packet model with extensive property documentation and 4 usage examples
+
+## [1.0.3] - 2025-10-04
 
 ### Added
 - EncoderInterface contract is defining standard interface for packet encoders (V311\Encoder and V5\Encoder)
@@ -28,11 +44,11 @@
 - connect_online.php (replaced with focused v3 and v5 connection examples)
 
 
-## [1.0.2] - 2025-01-03
+## [1.0.2] - 2025-10-04
 
-## [1.0.1] - 2025-01-03
+## [1.0.1] - 2025-10-04
 
-## [1.0.0] - 2025-01-03
+## [1.0.0] - 2025-10-04
 
 ### Added
 - Initial release of PHP IoT MQTT Client

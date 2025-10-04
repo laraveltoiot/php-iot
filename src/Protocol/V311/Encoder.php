@@ -83,15 +83,30 @@ final class Encoder implements EncoderInterface
         return $fixed.$vh.$payload;
     }
 
+    /**
+     * Encode a PUBLISH packet for MQTT 3.1.1.
+     *
+     * Packet structure:
+     * - Fixed Header: Type (3), DUP, QoS, RETAIN flags
+     * - Variable Header: Topic name, Packet Identifier (if QoS > 0)
+     * - Payload: Application message
+     *
+     * MQTT 3.1.1 does not support the properties field (that's MQTT 5.0 only).
+     *
+     * @throws \LogicException If QoS > 0 and packetId is not provided
+     */
     public function encodePublish(Publish $pkt): string
     {
+        // Fixed Header: construct flags byte with DUP, QoS, and RETAIN
         $fixedHeader = ($pkt->dup ? 0x08 : 0x00);
         $fixedHeader |= ($pkt->qos->value << 1);
         $fixedHeader |= ($pkt->retain ? 0x01 : 0x00);
         $fixedHeader |= (PacketType::PUBLISH->value << 4);
 
+        // Variable Header: topic name
         $variableHeader = Bytes::encodeString($pkt->topic);
-        // For QoS1/2 include Packet Identifier in variable header
+
+        // For QoS 1/2, include Packet Identifier in variable header
         if ($pkt->qos->value > 0) {
             if ($pkt->packetId === null) {
                 throw new \LogicException('QoS>0 requires packetId in Publish packet');
@@ -99,8 +114,10 @@ final class Encoder implements EncoderInterface
             $variableHeader .= pack('n', $pkt->packetId);
         }
 
+        // Payload: application message (can be empty)
         $payload = $pkt->payload;
 
+        // Calculate the remaining length
         $remainingLength = \strlen($variableHeader) + \strlen($payload);
 
         return \chr($fixedHeader)
